@@ -111,6 +111,11 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Environment variables
+.env
+.env.local
+.env.production
+
 # IDEs
 .idea/
 *.swp
