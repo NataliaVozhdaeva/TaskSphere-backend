@@ -44,18 +44,12 @@ def register_user(request):
 @permission_classes([permissions.IsAuthenticated])
 def api_root(request):
     return Response({
-        'message': 'Task Management API',
-        'student': '[Your Name]',
-        'endpoints': {
-            'tasks': '/api/tasks/',
-            'users': '/api/users/',
-            'register': '/api/register/',
-            'login': '/api/login/',
-            'logout': '/api/logout/',
-            'current_user': '/api/current-user/'
-        },
-        'version': '1.0.0',
-        'features': ['CRUD Tasks', 'Authentication', 'Status Management', 'Environment Variables']
+        'tasks': '/api/tasks/',
+        'users': '/api/users/',
+        'register': '/api/register/',
+        'login': '/api/login/',
+        'logout': '/api/logout/',
+        'current_user': '/api/current-user/'
     })
 
 
