@@ -1,9 +1,12 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.shortcuts import render
 from .models import Task
-from .serializers import TaskSerializer, UserSerializer, UserRegistrationSerializer
+from .serializers import TaskSerializer, UserSerializer, UserRegistrationSerializer, LoginSerializer
 
 
 class TaskViewSet(viewsets.ModelViewSet):
@@ -41,6 +44,8 @@ def api_root(request):
         'tasks': '/api/tasks/',
         'users': '/api/users/',
         'register': '/api/register/',
+        'login': '/api/login/',
+        'logout': '/api/logout/',
         'current_user': '/api/current-user/'
     })
 
@@ -50,3 +55,51 @@ def api_root(request):
 def current_user(request):
     serializer = UserSerializer(request.user)
     return Response(serializer.data)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([permissions.AllowAny])
+def login_user(request):
+    from rest_framework.authentication import SessionAuthentication
+    from rest_framework.exceptions import AuthenticationFailed
+    
+    # Disable session authentication for this view to avoid CSRF
+    request.auth = None
+    
+    if request.method == 'GET':
+        return Response({
+            'message': 'Login endpoint. Use POST with username and password.',
+            'example': {
+                'username': 'your_username',
+                'password': 'your_password'
+            }
+        })
+    
+    serializer = LoginSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({
+            'token': token.key,
+            'user': UserSerializer(user).data,
+            'message': 'Login successful'
+        }, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def logout_user(request):
+    try:
+        request.user.auth_token.delete()
+        return Response({
+            'message': 'Logout successful'
+        }, status=status.HTTP_200_OK)
+    except:
+        return Response({
+            'message': 'Logout failed'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+def login_page(request):
+    return render(request, 'login.html')
