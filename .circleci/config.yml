@@ -26,38 +26,38 @@ workflows:
   build-and-deploy:
     jobs:
       # Test job - runs on all branches
-      test:
-        context: testing
-        filters:
-          branches:
-            ignore: /^dependabot\/.*/
+      - test:
+          context: testing
+          filters:
+            branches:
+              ignore: /^dependabot\/.*/
       
       # Security scan job
-      security:
-        context: testing
-        filters:
-          branches:
-            ignore: /^dependabot\/.*/
+      - security:
+          context: testing
+          filters:
+            branches:
+              ignore: /^dependabot\/.*/
       
       # Deploy to staging - runs on develop branch
-      deploy-staging:
-        context: development
-        requires:
-          - test
-          - security
-        filters:
-          branches:
-            only: develop
+      - deploy-staging:
+          context: development
+          requires:
+            - test
+            - security
+          filters:
+            branches:
+              only: develop
       
       # Deploy to production - runs on main branch
-      deploy-production:
-        context: production
-        requires:
-          - test
-          - security
-        filters:
-          branches:
-            only: main
+      - deploy-production:
+          context: production
+          requires:
+            - test
+            - security
+          filters:
+            branches:
+              only: main
 
 # Define jobs
 jobs:
