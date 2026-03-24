@@ -26,38 +26,38 @@ workflows:
   build-and-deploy:
     jobs:
       # Test job - runs on all branches
-      test:
-        context: testing
-        filters:
-          branches:
-            ignore: /^dependabot\/.*/
+      - test:
+          context: testing
+          filters:
+            branches:
+              ignore: /^dependabot\/.*/
       
       # Security scan job
-      security:
-        context: testing
-        filters:
-          branches:
-            ignore: /^dependabot\/.*/
+      - security:
+          context: testing
+          filters:
+            branches:
+              ignore: /^dependabot\/.*/
       
       # Deploy to staging - runs on develop branch
-      deploy-staging:
-        context: development
-        requires:
-          - test
-          - security
-        filters:
-          branches:
-            only: develop
+      - deploy-staging:
+          context: development
+          requires:
+            - test
+            - security
+          filters:
+            branches:
+              only: develop
       
       # Deploy to production - runs on main branch
-      deploy-production:
-        context: production
-        requires:
-          - test
-          - security
-        filters:
-          branches:
-            only: main
+      - deploy-production:
+          context: production
+          requires:
+            - test
+            - security
+          filters:
+            branches:
+              only: main
 
 # Define jobs
 jobs:
@@ -89,7 +89,7 @@ jobs:
       - run:
           name: Create environment file
           command: |
-            cat > .env << EOF
+            cat > .env \<< EOF
             DEBUG=false
             SECRET_KEY=${DJANGO_SECRET_KEY}
             DB_NAME=${DB_NAME}
@@ -97,35 +97,35 @@ jobs:
             ALLOWED_HOSTS=localhost,127.0.0.1
             DJANGO_SETTINGS_MODULE=tasksphere.settings
             EOF
-      
+
       # Run Django migrations
       - run:
           name: Run Django migrations
           command: |
             python manage.py migrate
-      
+
       # Run tests
       - run:
           name: Run tests
           command: |
             python manage.py test --verbosity=2
-      
+
       # Run Django checks
       - run:
           name: Django system checks
           command: |
             python manage.py check --deploy
-      
+
       # Collect static files
       - run:
           name: Collect static files
           command: |
             python manage.py collectstatic --noinput
-      
+
       # Store test results
       - store_test_results:
           path: test-results
-      
+
       # Store artifacts
       - store_artifacts:
           path: staticfiles
@@ -135,41 +135,41 @@ jobs:
   security:
     docker:
       - image: cimg/python:3.11
-    
+
     working_directory: ~/repo
-    
+
     steps:
       # Checkout code
       - checkout
-      
+
       # Install dependencies
       - python/install-packages:
           pkg-manager: pip
           pip-dependency-file: requirements.txt
-      
+
       # Install security tools
       - run:
           name: Install security tools
           command: |
             pip install safety bandit
-      
+
       # Run safety check for dependency vulnerabilities
       - run:
           name: Run safety check
           command: |
             safety check --json --output safety-report.json || true
-      
+
       # Run bandit security linter
       - run:
           name: Run bandit security scan
           command: |
             bandit -r . -f json -o bandit-report.json || true
-      
+
       # Store security reports
       - store_artifacts:
           path: safety-report.json
           destination: safety-report
-      
+
       - store_artifacts:
           path: bandit-report.json
           destination: bandit-report
@@ -187,25 +187,25 @@ jobs:
           DB_HOST: ${DB_HOST}
           DB_PORT: ${DB_PORT}
           ALLOWED_HOSTS: ${ALLOWED_HOSTS}
-    
+
     working_directory: ~/repo
-    
+
     steps:
       # Checkout code
       - checkout
-      
+
       # Setup deployment environment
       - run:
           name: Setup deployment environment
           command: |
             echo "Setting up staging deployment..."
             echo "Deploying to: ${DEPLOY_ENVIRONMENT}"
-      
+
       # Create production environment file
       - run:
           name: Create production environment file
           command: |
-            cat > .env << EOF
+            cat > .env \<< EOF
             DEBUG=false
             SECRET_KEY=${DJANGO_SECRET_KEY}
             DB_NAME=${DB_NAME}
@@ -217,24 +217,24 @@ jobs:
             ALLOWED_HOSTS=${ALLOWED_HOSTS}
             CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
             EOF
-      
+
       # Install dependencies
       - python/install-packages:
           pkg-manager: pip
           pip-dependency-file: requirements.txt
-      
+
       # Run migrations
       - run:
           name: Run database migrations
           command: |
             python manage.py migrate
-      
+
       # Collect static files
       - run:
           name: Collect static files
           command: |
             python manage.py collectstatic --noinput
-      
+
       # Deploy application (placeholder for actual deployment)
       - run:
           name: Deploy to staging
@@ -265,25 +265,25 @@ jobs:
           DEPLOY_USER: ${DEPLOY_USER}
           DEPLOY_KEY: ${DEPLOY_KEY}
           DEPLOY_PATH: ${DEPLOY_PATH}
-    
+
     working_directory: ~/repo
-    
+
     steps:
       # Checkout code
       - checkout
-      
+
       # Setup deployment environment
       - run:
           name: Setup deployment environment
           command: |
             echo "Setting up production deployment..."
             echo "Deploying to: ${DEPLOY_ENVIRONMENT}"
-      
+
       # Create production environment file
       - run:
           name: Create production environment file
           command: |
-            cat > .env << EOF
+            cat > .env \<< EOF
             DEBUG=false
             SECRET_KEY=${DJANGO_SECRET_KEY}
             DB_NAME=${DB_NAME}
