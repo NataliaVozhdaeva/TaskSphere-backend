@@ -10,6 +10,11 @@ class TaskSerializer(serializers.ModelSerializer):
         model = Task
         fields = ['id', 'title', 'description', 'status', 'created_at', 'updated_at', 'assigned_to']
         read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def validate_title(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("Title is required and cannot be empty.")
+        return value.strip()
 
 
 class UserSerializer(serializers.ModelSerializer):
