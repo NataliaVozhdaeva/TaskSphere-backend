@@ -1,8 +1,4 @@
-# Task Management API - Assignment Implementation
-
-**Student:** [Your Name]  
-**Course:** [Your Course Code]  
-**Assignment:** Django REST Framework with CI/CD Pipeline  
+# Task Management 
 
 A Django REST API for task management demonstrating full CRUD operations, authentication, and secure CI/CD pipeline using GitHub Actions secrets.
 
@@ -16,11 +12,6 @@ A Django REST API for task management demonstrating full CRUD operations, authen
 - ✅ Production deployment automation
 
 ## Quick Start
-
-### Prerequisites
-- Python 3.11+
-- PostgreSQL (for production)
-- Git
 
 ### Local Development
 
