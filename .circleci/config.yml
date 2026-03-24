@@ -89,7 +89,7 @@ jobs:
       - run:
           name: Create environment file
           command: |
-            cat > .env << EOF
+            cat > .env \<< EOF
             DEBUG=false
             SECRET_KEY=${DJANGO_SECRET_KEY}
             DB_NAME=${DB_NAME}
@@ -205,7 +205,7 @@ jobs:
       - run:
           name: Create production environment file
           command: |
-            cat > .env << EOF
+            cat > .env \<< EOF
             DEBUG=false
             SECRET_KEY=${DJANGO_SECRET_KEY}
             DB_NAME=${DB_NAME}
@@ -283,7 +283,7 @@ jobs:
       - run:
           name: Create production environment file
           command: |
-            cat > .env << EOF
+            cat > .env \<< EOF
             DEBUG=false
             SECRET_KEY=${DJANGO_SECRET_KEY}
             DB_NAME=${DB_NAME}
