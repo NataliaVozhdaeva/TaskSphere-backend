@@ -132,3 +132,4 @@ check_*.py
 test_*.py
 update_*.py
 *_simple.py
+tests/
