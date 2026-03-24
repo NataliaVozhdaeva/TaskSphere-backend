@@ -125,3 +125,10 @@ dmypy.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Development and test scripts
+*_workflow.py
+check_*.py
+test_*.py
+update_*.py
+*_simple.py
