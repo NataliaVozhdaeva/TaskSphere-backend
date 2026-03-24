@@ -55,6 +55,7 @@ coverage.xml
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+staticfiles/
 
 # Flask stuff:
 instance/
@@ -125,3 +126,11 @@ dmypy.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Development and test scripts
+*_workflow.py
+check_*.py
+test_*.py
+update_*.py
+*_simple.py
+tests/

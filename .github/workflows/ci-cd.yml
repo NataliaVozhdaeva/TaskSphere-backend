@@ -1,0 +1,112 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install python-dotenv  # Ensure dotenv is available
+
+    - name: Create environment file
+      run: |
+        cat > .env << EOF
+        DEBUG=False
+        SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY || 'test-secret-key-for-ci-cd' }}
+        DB_NAME=db.sqlite3
+        DB_ENGINE=django.db.backends.sqlite3
+        ALLOWED_HOSTS=localhost,127.0.0.1
+        DJANGO_SETTINGS_MODULE=tasksphere.settings
+        EOF
+
+    - name: Run Django migrations
+      run: |
+        python manage.py migrate --settings=tasksphere.settings
+
+    - name: Run tests
+      run: |
+        python manage.py test --settings=tasksphere.settings
+
+    - name: Run Django checks
+      run: |
+        python manage.py check --deploy
+
+    - name: Collect static files
+      run: |
+        python manage.py collectstatic --noinput
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit
+        pip install -r requirements.txt
+
+    - name: Run security checks
+      run: |
+        safety check --json --output safety-report.json || true
+        bandit -r . -f json -o bandit-report.json || true
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-reports
+        path: |
+          safety-report.json
+          bandit-report.json
+
+  deploy:
+    needs: [test, security]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to production
+      env:
+        DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      run: |
+        echo "Deploying to production..."
+        # Add your deployment commands here
+        # Example: rsync, docker deploy, etc.
+        echo "Deployment complete!"
