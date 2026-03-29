@@ -90,8 +90,49 @@ jobs:
           safety-report.json
           bandit-report.json
 
-  deploy:
+  docker-build:
     needs: [test, security]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker image
+      run: |
+        docker build -t tasksphere-backend:${{ github.sha }} .
+        docker tag tasksphere-backend:${{ github.sha }} tasksphere-backend:latest
+
+    - name: Test Docker image
+      run: |
+        docker run -d -p 8000:8000 --name test-container tasksphere-backend:${{ github.sha }}
+        sleep 5
+        docker ps | grep test-container
+        docker stop test-container
+        docker rm test-container
+
+    - name: Log in to GitHub Container Registry
+      if: github.ref == 'refs/heads/main'
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Push Docker image to GHCR
+      if: github.ref == 'refs/heads/main'
+      run: |
+        docker tag tasksphere-backend:${{ github.sha }} ghcr.io/${{ github.repository_owner }}/tasksphere-backend:${{ github.sha }}
+        docker tag tasksphere-backend:latest ghcr.io/${{ github.repository_owner }}/tasksphere-backend:latest
+        docker push ghcr.io/${{ github.repository_owner }}/tasksphere-backend:${{ github.sha }}
+        docker push ghcr.io/${{ github.repository_owner }}/tasksphere-backend:latest
+
+  deploy:
+    needs: [test, security, docker-build]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
