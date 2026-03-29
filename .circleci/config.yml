@@ -202,31 +202,32 @@ jobs:
       - run:
           name: Build Docker image
           command: |
-            docker build -t ${DOCKER_USERNAME}/tasksphere-backend:${CIRCLE_SHA1} .
-            docker tag ${DOCKER_USERNAME}/tasksphere-backend:${CIRCLE_SHA1} ${DOCKER_USERNAME}/tasksphere-backend:latest
+            export DOCKER_USER=${DOCKER_USERNAME:-$CIRCLE_PROJECT_USERNAME}
+            docker build -t ${DOCKER_USER}/tasksphere-backend:${CIRCLE_SHA1} .
+            docker tag ${DOCKER_USER}/tasksphere-backend:${CIRCLE_SHA1} ${DOCKER_USER}/tasksphere-backend:latest
 
       # Test Docker image
       - run:
           name: Test Docker image
           command: |
-            docker run -d -p 8000:8000 --name test-container ${DOCKER_USERNAME}/tasksphere-backend:${CIRCLE_SHA1}
+            export DOCKER_USER=${DOCKER_USERNAME:-$CIRCLE_PROJECT_USERNAME}
+            docker run -d -p 8000:8000 --name test-container ${DOCKER_USER}/tasksphere-backend:${CIRCLE_SHA1}
             sleep 5
             docker ps | grep test-container
             docker stop test-container
             docker rm test-container
 
-      # Login to Docker Hub
-      - run:
-          name: Login to Docker Hub
-          command: |
-            echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
-
-      # Push Docker image
+      # Login and Push (only if credentials provided)
       - run:
           name: Push Docker image
           command: |
-            docker push ${DOCKER_USERNAME}/tasksphere-backend:${CIRCLE_SHA1}
-            docker push ${DOCKER_USERNAME}/tasksphere-backend:latest
+            if [ -n "${DOCKER_USERNAME}" ] && [ -n "${DOCKER_PASSWORD}" ]; then
+              echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+              docker push ${DOCKER_USERNAME}/tasksphere-backend:${CIRCLE_SHA1}
+              docker push ${DOCKER_USERNAME}/tasksphere-backend:latest
+            else
+              echo "Skipping push - Docker credentials not configured"
+            fi
 
   # Deploy to staging
   deploy-staging:
