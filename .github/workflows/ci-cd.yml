@@ -126,10 +126,11 @@ jobs:
     - name: Push Docker image to GHCR
       if: github.ref == 'refs/heads/main'
       run: |
-        docker tag tasksphere-backend:${{ github.sha }} ghcr.io/${{ github.repository_owner }}/tasksphere-backend:${{ github.sha }}
-        docker tag tasksphere-backend:latest ghcr.io/${{ github.repository_owner }}/tasksphere-backend:latest
-        docker push ghcr.io/${{ github.repository_owner }}/tasksphere-backend:${{ github.sha }}
-        docker push ghcr.io/${{ github.repository_owner }}/tasksphere-backend:latest
+        REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+        docker tag tasksphere-backend:${{ github.sha }} ghcr.io/${REPO_OWNER}/tasksphere-backend:${{ github.sha }}
+        docker tag tasksphere-backend:latest ghcr.io/${REPO_OWNER}/tasksphere-backend:latest
+        docker push ghcr.io/${REPO_OWNER}/tasksphere-backend:${{ github.sha }}
+        docker push ghcr.io/${REPO_OWNER}/tasksphere-backend:latest
 
   deploy:
     needs: [test, security, docker-build]
