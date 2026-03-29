@@ -39,12 +39,20 @@ workflows:
             branches:
               ignore: /^dependabot\/.*/
       
+      # Docker build job - runs after tests and security
+      - docker-build:
+          context: production
+          requires:
+            - test
+            - security
+      
       # Deploy to staging - runs on develop branch
       - deploy-staging:
           context: development
           requires:
             - test
             - security
+            - docker-build
           filters:
             branches:
               only: develop
@@ -55,6 +63,7 @@ workflows:
           requires:
             - test
             - security
+            - docker-build
           filters:
             branches:
               only: main
@@ -173,6 +182,52 @@ jobs:
       - store_artifacts:
           path: bandit-report.json
           destination: bandit-report
+
+  # Docker build job
+  docker-build:
+    docker:
+      - image: cimg/python:3.11
+
+    working_directory: ~/repo
+
+    steps:
+      # Checkout code
+      - checkout
+
+      # Setup remote Docker
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      # Build Docker image
+      - run:
+          name: Build Docker image
+          command: |
+            export DOCKER_USER=${DOCKER_USERNAME:-$CIRCLE_PROJECT_USERNAME}
+            docker build -t ${DOCKER_USER}/tasksphere-backend:${CIRCLE_SHA1} .
+            docker tag ${DOCKER_USER}/tasksphere-backend:${CIRCLE_SHA1} ${DOCKER_USER}/tasksphere-backend:latest
+
+      # Test Docker image
+      - run:
+          name: Test Docker image
+          command: |
+            export DOCKER_USER=${DOCKER_USERNAME:-$CIRCLE_PROJECT_USERNAME}
+            docker run -d -p 8000:8000 --name test-container ${DOCKER_USER}/tasksphere-backend:${CIRCLE_SHA1}
+            sleep 5
+            docker ps | grep test-container
+            docker stop test-container
+            docker rm test-container
+
+      # Login and Push (only if credentials provided)
+      - run:
+          name: Push Docker image
+          command: |
+            if [ -n "${DOCKER_USERNAME}" ] && [ -n "${DOCKER_PASSWORD}" ]; then
+              echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+              docker push ${DOCKER_USERNAME}/tasksphere-backend:${CIRCLE_SHA1}
+              docker push ${DOCKER_USERNAME}/tasksphere-backend:latest
+            else
+              echo "Skipping push - Docker credentials not configured"
+            fi
 
   # Deploy to staging
   deploy-staging:
