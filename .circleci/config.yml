@@ -39,17 +39,12 @@ workflows:
             branches:
               ignore: /^dependabot\/.*/
       
-      # Docker build job - runs on main and develop
+      # Docker build job - runs after tests and security
       - docker-build:
           context: production
           requires:
             - test
             - security
-          filters:
-            branches:
-              only:
-                - main
-                - develop
       
       # Deploy to staging - runs on develop branch
       - deploy-staging:
