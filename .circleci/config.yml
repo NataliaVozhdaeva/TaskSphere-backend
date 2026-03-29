@@ -39,12 +39,25 @@ workflows:
             branches:
               ignore: /^dependabot\/.*/
       
+      # Docker build job - runs on main and develop
+      - docker-build:
+          context: production
+          requires:
+            - test
+            - security
+          filters:
+            branches:
+              only:
+                - main
+                - develop
+      
       # Deploy to staging - runs on develop branch
       - deploy-staging:
           context: development
           requires:
             - test
             - security
+            - docker-build
           filters:
             branches:
               only: develop
@@ -55,6 +68,7 @@ workflows:
           requires:
             - test
             - security
+            - docker-build
           filters:
             branches:
               only: main
@@ -173,6 +187,51 @@ jobs:
       - store_artifacts:
           path: bandit-report.json
           destination: bandit-report
+
+  # Docker build job
+  docker-build:
+    docker:
+      - image: cimg/python:3.11
+
+    working_directory: ~/repo
+
+    steps:
+      # Checkout code
+      - checkout
+
+      # Setup remote Docker
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      # Build Docker image
+      - run:
+          name: Build Docker image
+          command: |
+            docker build -t ${DOCKER_USERNAME}/tasksphere-backend:${CIRCLE_SHA1} .
+            docker tag ${DOCKER_USERNAME}/tasksphere-backend:${CIRCLE_SHA1} ${DOCKER_USERNAME}/tasksphere-backend:latest
+
+      # Test Docker image
+      - run:
+          name: Test Docker image
+          command: |
+            docker run -d -p 8000:8000 --name test-container ${DOCKER_USERNAME}/tasksphere-backend:${CIRCLE_SHA1}
+            sleep 5
+            docker ps | grep test-container
+            docker stop test-container
+            docker rm test-container
+
+      # Login to Docker Hub
+      - run:
+          name: Login to Docker Hub
+          command: |
+            echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+
+      # Push Docker image
+      - run:
+          name: Push Docker image
+          command: |
+            docker push ${DOCKER_USERNAME}/tasksphere-backend:${CIRCLE_SHA1}
+            docker push ${DOCKER_USERNAME}/tasksphere-backend:latest
 
   # Deploy to staging
   deploy-staging:
