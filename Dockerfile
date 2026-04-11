@@ -17,6 +17,10 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy version file first to invalidate cache when code changes
+COPY DEPLOY_VERSION.txt /app/
+RUN cat /app/DEPLOY_VERSION.txt
+
 # Copy project
 COPY . /app/
 
