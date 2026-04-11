@@ -2,8 +2,6 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-print("SETTINGS FILE LOADED FROM:", __file__)
-
 # Load environment variables from .env file
 load_dotenv()
 
@@ -43,9 +41,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-
-print("MIDDLEWARE:", MIDDLEWARE)
 
 ROOT_URLCONF = 'tasksphere.urls'
 
@@ -136,6 +131,7 @@ REST_FRAMEWORK = {
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
+    "https://task-sphere-frontend-psi.vercel.app",
     "https://task-sphere-frontend-ph7veeh3m-natalias-projects-23e31ff8.vercel.app",
     "http://localhost:3000",
 ]
